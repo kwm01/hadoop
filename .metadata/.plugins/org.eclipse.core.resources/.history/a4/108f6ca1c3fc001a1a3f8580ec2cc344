@@ -1,0 +1,48 @@
+package Test;
+
+import java.io.IOException;
+
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Mapper;
+
+/**
+ * 1、自定义类，继承Mapper组件类
+ * 2、定义Mapper的输入输出的KEY-VALUE的类型 <KEYIN,VALUEIN,KEYOUT,VALUEOUT>
+ * 	2.1 第一个泛型：对应的是输入key，默认是行首偏移量，类型为LongWritable
+ * 	2.2 第二个泛型：对应的是输入value，默认是一行的数据内容，类型为Text
+ * 	2.3 第三个泛型：对应的是输出key
+ * 	2.4 第四个泛型：对应的是输出value
+ * 此时业务要求输出单词和单词的个数，单词作为key值（设置为Text类型），单词的个数作为value值（设置LongWirtable）
+ * @author tarena
+ * 能得出：
+ * 1、Mapper组件相当于读取文件内容，然后通过map方法来处理文件，将处理后的结果交给后续的reduce
+ * 2、核心：拿到value，处理value
+ *
+ */
+public class WordCountMapper extends Mapper<LongWritable,Text,Text,LongWritable>{
+
+	/*
+	 * 一行数据触发一次map方法的执行
+	 * 1、key : 当前行的开始位置在整个文件中的偏移量
+	 * 2、value：当前一行的内容
+	 * 3、Context：当前mapper组件的环境对象，通过环境对象向外输出结果
+	 * @see org.apache.hadoop.mapreduce.Mapper#map(KEYIN, VALUEIN, org.apache.hadoop.mapreduce.Mapper.Context)
+	 */
+	@Override
+	protected void map(LongWritable key, Text value, 
+			Mapper<LongWritable, Text, Text, LongWritable>.Context context)	throws IOException, InterruptedException {
+//		1、获取一行的数据，Text，转换成java中的String : "hello rose jerry java"
+		String line = value.toString();
+//		2、将字符串切分为字符串数组,以空格分隔的
+		String[] arr = line.split(" ");
+//		3、遍历数组，输出整个单词以及单词对应的频次 
+//		（"hello",1）("rose",1) ("jerry",1) ----> reduce中(hello,{1,1,1,1,1})  ("rose",{1,1,1,1})
+		for(String str :arr){
+//			将数据处理成对应类型，然后写出
+//			类型一定要和事先声明的Mapper的泛型一致
+			context.write(new Text(str), new LongWritable(1));
+		}
+	}
+
+}

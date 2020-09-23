@@ -1,0 +1,47 @@
+package Test;
+
+import java.io.IOException;
+
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Reducer;
+
+/**
+ * 
+ * 1、自定义类，继承Reducer组件
+ * 2、定义Reducer的输入输出类型：<KEYIN,VALUEIN,KEYOUT,VALUEOUT>
+ * 	2.1第一个泛型：输入key，对应接收到的mapper端的输出key，类型和mapper的KEYOUT一致
+ * 	2.2第二个泛型：输入value，对应接收到的mapper端的输入value，类型VALUEOUT一致
+ * 	2.3第三个以及第四个泛型：根据业务规则决定，此处设置为（Text,LongWritable）
+ * @author tarena
+ * 工作机制：
+ * 1、核心：reduce方法
+ * 2、barrier中间将所有key相同的value合并，形成一个迭代器Iterable，处理Iterable
+ * 3、reduce方法执行的次数取决于mapper输出的key的个数，有几个不同的key就会执行几次reduce方法
+ *
+ */
+public class WordCountReducer extends Reducer<Text,LongWritable,Text,LongWritable> {
+
+	/*
+	 * 1、key:mapper输出的key，唯一的
+	 * 2、values:中间环节处理过之后形成的value的迭代器Iterable
+	 * @see org.apache.hadoop.mapreduce.Reducer#reduce(KEYIN, java.lang.Iterable, org.apache.hadoop.mapreduce.Reducer.Context)
+	 */
+	@Override
+	protected void reduce(Text key, Iterable<LongWritable> values,
+			Reducer<Text, LongWritable, Text, LongWritable>.Context context) throws IOException, InterruptedException {
+//		拿到的数据 reduce中(hello,{1,1,1,1,1})  ("rose",{1,1,1,1})
+//		定义变量记录次数
+		long sum = 0;
+//		循环，遍历迭代器，进行累加的操作，得到当前单词的出行次数
+		for(LongWritable count : values){
+//			通过get()获取long类型的数值。记录总次数
+			sum += count.get();
+		}
+		
+//		输出数据，（key单词，value总次数sum）
+		context.write(key, new LongWritable(sum));
+	
+	}
+
+}

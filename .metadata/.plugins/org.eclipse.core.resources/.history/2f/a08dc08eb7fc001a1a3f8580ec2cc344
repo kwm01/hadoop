@@ -1,0 +1,52 @@
+package Test;
+
+import java.io.IOException;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+/**
+ * 在这个组件中声明MR job的信息,并且提交job信息到HDFS中
+ * @author tarena
+ *
+ */
+public class WordCountDriver1 {
+	
+	public static void main(String[] args) throws Exception {
+//		1、获取当前的默认配置
+		Configuration conf = new Configuration();
+//		2、获取代表当前的MapReduce job的对象：向hadoop申请一个job执行逻辑
+		Job job = Job.getInstance(conf);
+		
+//		3、指定job相关的组件以及类型信息
+//		3.1 指定当前程序的入口类
+		job.setJarByClass(Test.WordCountDriver1.class);
+//		3.2指定Mapper 以及 Reducer
+		job.setMapperClass(WordCountMapper.class);
+		job.setReducerClass(WordCountReducer.class);
+//		3.3指定Mapper的输出数据类型以及Reducer的输出数据类型
+		job.setMapOutputKeyClass(Text.class);
+		job.setMapOutputValueClass(LongWritable.class);
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(LongWritable.class);
+		
+		
+//		4、数据来自HDFS，最终输出到HDFS
+//		4.1 指定数据输入路径
+		FileInputFormat.setInputPaths(job, 
+				new Path("hdfs://192.168.211.128:9000/train/wordcount/words.txt"));
+//		4.2 指定结果数据输出路径
+//		注意：输出路径一定要是之前不存在的目录，HDFS会主动为你创建目录
+		FileOutputFormat.setOutputPath(job, 
+				new Path("hdfs://192.168.211.128:9000/result/wc"));
+		
+//		5、做job任务的提交
+		job.waitForCompletion(true);
+	}
+
+}
